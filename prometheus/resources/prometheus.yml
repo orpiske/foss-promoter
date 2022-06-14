@@ -1,0 +1,49 @@
+# my global config
+global:
+  scrape_interval: 10s
+  evaluation_interval: 30s
+  # scrape_timeout is set to the global default (10s).
+
+rule_files:
+  - "first.rules"
+  - "my/*.rules"
+
+scrape_configs:
+  - job_name: fp-repo-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - fp-repo-service:8180
+
+  - job_name: fp-commit-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - fp-commit-service:8180
+
+  - job_name: fp-web
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - fp-web:8180
+
+#alerting:
+#  alertmanagers:
+#    - scheme: https
+#      static_configs:
+#        - targets:
+#            - "1.2.3.4:9093"
+#            - "1.2.3.5:9093"
+#            - "1.2.3.6:9093"
+#
+#tracing:
+#  endpoint: "localhost:4317"
+#  client_type: "grpc"
+#  headers:
+#    foo: "bar"
+#  timeout: 5s
+#  compression: "gzip"
+#  tls_config:
+#    cert_file: valid_cert_file
+#    key_file: valid_key_file
+#    insecure_skip_verify: true

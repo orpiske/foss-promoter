@@ -20,10 +20,20 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <camel.version>3.18.0-SNAPSHOT</camel.version>
-        <log4j2.version>2.13.3</log4j2.version>
+        <camel.version>3.18.0</camel.version>
+        <log4j2.version>2.17.2</log4j2.version>
         <picocli.version>4.6.3</picocli.version>
         <kafka-client.version>3.1.0</kafka-client.version>
+        <zxing.version>3.5.0</zxing.version>
+        <micrometer.version>1.8.3</micrometer.version>
+
+        <version.cxf>3.5.2</version.cxf>
+        <version.jax-ws-rs>2.1.1</version.jax-ws-rs>
+        <version.jackson>2.13.3</version.jackson>
+
+
+        <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
+        <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -48,6 +58,37 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka-client.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>core</artifactId>
+                <version>${zxing.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>javase</artifactId>
+                <version>${zxing.version}</version>
+            </dependency>
+
+            <!-- for the CLI -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -62,6 +103,20 @@
             <artifactId>camel-kafka</artifactId>
         </dependency>
 
+        <!-- Observability -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-micrometer</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>${micrometer.version}</version>
+        </dependency>
+
+
         <!-- logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -74,11 +129,50 @@
     <build>
         <defaultGoal>install</defaultGoal>
 
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.camel</groupId>
+                    <artifactId>camel-maven-plugin</artifactId>
+                    <version>${camel.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>prepare-fatjar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <configuration>
+                        <descriptorRefs>
+                            <descriptorRef>jar-with-dependencies</descriptorRef>
+                        </descriptorRefs>
+                        <archive>
+                            <manifest>
+                                <mainClass>${fp.main.class}</mainClass>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>make-assembly</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
                     <release>11</release>
                 </configuration>
@@ -86,23 +180,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>${maven.resources.plugin.version}</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
-
-<!--            &lt;!&ndash; Allows the example to be run via 'mvn camel:run' &ndash;&gt;-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.camel</groupId>-->
-<!--                <artifactId>camel-maven-plugin</artifactId>-->
-<!--                <version>${camel.version}</version>-->
-<!--                <configuration>-->
-<!--                    <logClasspath>true</logClasspath>-->
-<!--                    <mainClass>org.foss.promoter.MainApp</mainClass>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
         </plugins>
     </build>
+
+
 
 </project>

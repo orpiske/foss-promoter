@@ -10,11 +10,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>fp-repo-service</artifactId>
-    <name>FOSS :: Promoter :: Repository Service</name>
+    <artifactId>fp-commit-qr-code</artifactId>
+    <name>FOSS :: Promoter :: Commit Service</name>
 
     <properties>
-        <fp.main.class>org.foss.promoter.repo.service.main.FPRepoServiceMain</fp.main.class>
+        <fp.main.class>org.foss.promoter.commit.service.main.FPCommitServiceMain</fp.main.class>
     </properties>
 
     <dependencies>
@@ -36,12 +36,22 @@
 
         <dependency>
             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-git</artifactId>
+            <artifactId>camel-main</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-main</artifactId>
+            <artifactId>camel-cassandraql</artifactId>
         </dependency>
 
     </dependencies>

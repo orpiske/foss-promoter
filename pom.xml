@@ -10,8 +10,12 @@
     <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>fp-parent</module>
+        <module>fp-common</module>
         <module>fp-cli</module>
         <module>fp-repo-service</module>
+        <module>fp-commit-service</module>
+        <module>fp-web</module>
+
     </modules>
 
     <name>FOSS :: Promoter</name>
