@@ -16,13 +16,15 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.micrometer.MicrometerConstants;
 import org.apache.camel.component.micrometer.eventnotifier.MicrometerRouteEventNotifier;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
+import org.apache.camel.opentelemetry.OpenTelemetryTracer;
 import org.foss.promoter.commit.service.common.ContributionsDao;
-import org.foss.promoter.common.PrometheusRegistryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.camel.component.micrometer.MicrometerConstants.METRICS_REGISTRY_NAME;
+import static org.foss.promoter.common.PrometheusRegistryUtil.getMetricRegistry;
 
 public class CommitRoute extends RouteBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(CommitRoute.class);
@@ -62,16 +64,28 @@ public class CommitRoute extends RouteBuilder {
         }
     }
 
-    @Override
-    public void configure() {
-        MeterRegistry registry = PrometheusRegistryUtil.getMetricRegistry();
+    private void enableTelemetry() {
+        OpenTelemetryTracer tracer = new OpenTelemetryTracer();
+        tracer.init(getCamelContext());
+    }
+
+    private void enableMetrics() {
+        MeterRegistry registry = getMetricRegistry();
 
         // Add the registry
-        getContext().getRegistry().bind(MicrometerConstants.METRICS_REGISTRY_NAME, registry);
+        getContext().getRegistry().bind(METRICS_REGISTRY_NAME, registry);
+
         // Expose route statistics
         getContext().addRoutePolicyFactory(new MicrometerRoutePolicyFactory());
         // Count added / running routes
         getContext().getManagementStrategy().addEventNotifier(new MicrometerRouteEventNotifier());
+    }
+
+    @Override
+    public void configure() {
+        enableMetrics();
+
+        enableTelemetry();
 
         fromF("kafka:commits?brokers=%s:%d&consumersCount=%d&groupId=fp-commit-service", bootstrapHost, bootstrapPort, consumersCount)
                 .routeId("commit-qr")

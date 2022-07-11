@@ -12,6 +12,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+FROM fedora:36 as fp-builder
+RUN dnf install -y wget && \
+    dnf clean all && \
+    cd /tmp && \
+    wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.15.0/opentelemetry-javaagent.jar
+
 FROM fedora:36 as foss-commit-service
 LABEL maintainer="orpiske@apache.org"
 
@@ -22,6 +28,7 @@ ENV JAVA_HOME /etc/alternatives/jre
 
 COPY target/fp-*with-dependencies.jar ${DEPLOYMENT_DIR}/commit-service.jar
 COPY src/main/scripts/run.sh ${DEPLOYMENT_DIR}/run.sh
+COPY --from=fp-builder /tmp/opentelemetry-javaagent.jar ${DEPLOYMENT_DIR}/opentelemetry-javaagent.jar
 
 RUN chmod +x ${DEPLOYMENT_DIR}/*.sh
 WORKDIR ${DEPLOYMENT_DIR}

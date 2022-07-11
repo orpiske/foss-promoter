@@ -17,6 +17,8 @@
         <fp.main.class>org.foss.promoter.commit.service.main.FPCommitServiceMain</fp.main.class>
     </properties>
 
+    <!-- NOTE: Observability and OpenTelemetry dependencies are on the parent pom -->
+
     <dependencies>
         <dependency>
             <groupId>org.foss.promoter</groupId>
@@ -53,7 +55,6 @@
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-cassandraql</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>

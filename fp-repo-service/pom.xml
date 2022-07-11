@@ -17,6 +17,8 @@
         <fp.main.class>org.foss.promoter.repo.service.main.FPRepoServiceMain</fp.main.class>
     </properties>
 
+    <!-- NOTE: Observability and OpenTelemetry dependencies are on the parent pom -->
+
     <dependencies>
         <dependency>
             <groupId>org.foss.promoter</groupId>
@@ -43,7 +45,6 @@
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-main</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>

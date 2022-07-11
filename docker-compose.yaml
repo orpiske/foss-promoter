@@ -40,6 +40,23 @@ services:
       - "2181:2181"
     environment:
       LOG_DIR: /tmp/logs
+  prometheus:
+    build:
+      dockerfile: Dockerfile
+      context: prometheus
+    ports:
+      - "9090:9090"
+  grafana:
+    image: grafana/grafana-oss
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
   kafka:
     image: quay.io/strimzi/kafka:0.28.0-kafka-3.1.0
     logging:
@@ -58,23 +75,6 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_NUM_PARTITIONS: 3
-  prometheus:
-    build:
-      dockerfile: Dockerfile
-      context: prometheus
-    ports:
-      - "9090:9090"
-  grafana:
-    image: grafana/grafana-oss
-    depends_on:
-      - prometheus
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-storage:/var/lib/grafana
-    environment:
-      GF_AUTH_ANONYMOUS_ENABLED: true
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
   fp-commit-service:
     build:
       dockerfile: src/main/docker/Dockerfile
@@ -86,6 +86,7 @@ services:
       KAFKA_HOST: kafka
       CASSANDRA_HOST: cassandra
       KAFKA_CONSUMERS_COUNT: 3
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4317
   fp-repo-service:
     build:
       dockerfile: src/main/docker/Dockerfile
@@ -97,6 +98,7 @@ services:
       - fp-commit-service
     environment:
       KAFKA_HOST: kafka
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4317
   fp-web:
     build:
       dockerfile: src/main/docker/Dockerfile
@@ -108,3 +110,4 @@ services:
       - "8080:8080"
     environment:
       KAFKA_HOST: kafka
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4317

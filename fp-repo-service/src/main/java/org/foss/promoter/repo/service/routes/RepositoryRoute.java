@@ -9,6 +9,7 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.eventnotifier.MicrometerRouteEventNotifier;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
+import org.apache.camel.opentelemetry.OpenTelemetryTracer;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.slf4j.Logger;
@@ -23,6 +24,8 @@ public class RepositoryRoute extends RouteBuilder {
     private final int bootstrapPort;
     private final String dataDir;
     private ProducerTemplate producerTemplate;
+    private boolean disableTelemetry;
+    private boolean disableMetrics;
 
 
     public RepositoryRoute(String bootstrapHost, int bootstrapPort, String dataDir) {
@@ -69,10 +72,12 @@ public class RepositoryRoute extends RouteBuilder {
         walk.forEach(this::doSend);
     }
 
-    @Override
-    public void configure() {
-        producerTemplate = getContext().createProducerTemplate();
+    private void enableTelemetry() {
+        OpenTelemetryTracer tracer = new OpenTelemetryTracer();
+        tracer.init(getCamelContext());
+    }
 
+    private void enableMetrics() {
         MeterRegistry registry = getMetricRegistry();
 
         // Add the registry
@@ -82,6 +87,15 @@ public class RepositoryRoute extends RouteBuilder {
         getContext().addRoutePolicyFactory(new MicrometerRoutePolicyFactory());
         // Count added / running routes
         getContext().getManagementStrategy().addEventNotifier(new MicrometerRouteEventNotifier());
+    }
+
+    @Override
+    public void configure() {
+        producerTemplate = getContext().createProducerTemplate();
+
+        enableMetrics();
+
+        enableTelemetry();
 
         // Handles the request body
         fromF("kafka:repositories?brokers=%s:%d", bootstrapHost, bootstrapPort)
@@ -131,6 +145,8 @@ public class RepositoryRoute extends RouteBuilder {
 //                .threads(5)
                 .toF("kafka:commits?brokers=%s:%d", bootstrapHost, bootstrapPort);
     }
+
+
 
 
 }

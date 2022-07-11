@@ -19,7 +19,11 @@ if [[ -z "${KAFKA_HOST}" || -z "${CASSANDRA_HOST}" ]] ; then
   java -jar /deployments/commit-service.jar --help
   exit 1
 else
-  java -jar /deployments/commit-service.jar \
+  java -javaagent:/deployments/opentelemetry-javaagent.jar \
+                 -Dotel.metrics.exporter=none \
+                 -Dotel.exporter.otlp.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT} \
+                 -Dotel.resource.attributes="service.name=fp-commit-service" \
+        -jar /deployments/commit-service.jar \
         -s ${KAFKA_HOST} \
         -cs ${CASSANDRA_HOST} \
         -cp ${CASSANDRA_PORT:-9042} \

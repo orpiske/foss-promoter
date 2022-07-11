@@ -19,6 +19,10 @@ if [[ -z "${KAFKA_HOST}" ]] ; then
   java -jar /deployments/repo-service.jar --help
   exit 1
 else
-  java -jar /deployments/repo-service.jar -s ${KAFKA_HOST} -d ${DATA_DIR}
+  java -javaagent:/deployments/opentelemetry-javaagent.jar \
+                 -Dotel.metrics.exporter=none \
+                 -Dotel.exporter.otlp.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT} \
+                 -Dotel.resource.attributes="service.name=fp-repo-service" \
+        -jar /deployments/repo-service.jar -s ${KAFKA_HOST} -d ${DATA_DIR}
 fi
 
