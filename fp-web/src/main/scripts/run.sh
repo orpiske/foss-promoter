@@ -16,7 +16,7 @@
 #
 
 if [[ -z "${KAFKA_HOST}" ]] ; then
-  java -jar /deployments/web.jar --help
+  java -jar /deployments/web.jar -Dcamel.health.enabled=true --help
   exit 1
 else
   java -jar /deployments/web.jar -s ${KAFKA_HOST}

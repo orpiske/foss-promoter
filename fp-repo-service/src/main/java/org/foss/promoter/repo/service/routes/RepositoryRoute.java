@@ -7,6 +7,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.kafka.KafkaConsumerHealthCheck;
 import org.apache.camel.component.micrometer.eventnotifier.MicrometerRouteEventNotifier;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -82,6 +83,8 @@ public class RepositoryRoute extends RouteBuilder {
         getContext().addRoutePolicyFactory(new MicrometerRoutePolicyFactory());
         // Count added / running routes
         getContext().getManagementStrategy().addEventNotifier(new MicrometerRouteEventNotifier());
+
+        getContext().setLoadHealthChecks(true);
 
         // Handles the request body
         fromF("kafka:repositories?brokers=%s:%d", bootstrapHost, bootstrapPort)

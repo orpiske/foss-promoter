@@ -19,6 +19,7 @@ if [[ -z "${KAFKA_HOST}" ]] ; then
   java -jar /deployments/repo-service.jar --help
   exit 1
 else
-  java -jar /deployments/repo-service.jar -s ${KAFKA_HOST} -d ${DATA_DIR}
+  java -javaagent:/deployments/jmx_prometheus_javaagent.jar=0.0.0.0:9404:config.yaml \
+      -jar /deployments/repo-service.jar -s ${KAFKA_HOST} -d ${DATA_DIR}
 fi
 
