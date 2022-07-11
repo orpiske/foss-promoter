@@ -33,20 +33,20 @@ docker-compose up -d
 1. Access the Dashboard import page at: http://localhost:3000/dashboard/import
 2. Upload the the System Overview [dashboard JSON file](./grafana/System%20Overview.json). Select the Prometheus data source created previously.
 
+# Run the demo
 
-4. Send a Git repository for the system to generate the QR codes for each of the commits in the repository:
+1. Send a Git repository for the system to generate the QR codes for each of the commits in the repository:
 
 ```shell
 java -jar fp-cli/target/fp-cli-1.0.0-SNAPSHOT.jar  --api-server http://localhost:8080 --repository https://github.com/apache/maven.git
 ```
 
-4.1. Repeat step 4 as you wish.
+2. Repeat step 1 as much as you want.
 
-5. Shutdown everything
+3. Shutdown everything
 ```shell
 docker-compose down
 ```
-
 
 # Tips:
 
