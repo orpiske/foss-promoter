@@ -10,9 +10,6 @@ spec:
     - name: http
       port: 8080
       nodePort: 30080
-    - name: http-ui
-      port: 80
-      nodePort: 30501
   selector:
     app: fp-web
 
