@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-web-external
+  labels:
+    run: fp-web
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      nodePort: 30080
+    - name: http-ui
+      port: 80
+      nodePort: 30501
+  selector:
+    app: fp-web
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fp-web
+  labels:
+    app: fp-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fp-web
+  template:
+    metadata:
+      labels:
+        app: fp-web
+    spec:
+      containers:
+        - name: fp-web
+          image: integrationworkspace/fp-web:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 9404
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 1000Mi
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+          env:
+            - name: KAFKA_HOST
+              value: kafka-cluster-kafka-bootstrap
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fp-repo-service
+  labels:
+    app: fp-repo-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fp-repo-service
+  template:
+    metadata:
+      labels:
+        app: fp-repo-service
+    spec:
+      containers:
+        - name: fp-repo-service
+          image: integrationworkspace/fp-repo-service:latest
+          ports:
+            - containerPort: 8180
+              protocol: TCP
+            - containerPort: 9404
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 2000m
+              memory: 2000Mi
+            limits:
+              cpu: 2000m
+              memory: 2000Mi
+          env:
+            - name: KAFKA_HOST
+              value: kafka-cluster-kafka-bootstrap
+                
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fp-commit-service
+  labels:
+    app: fp-commit-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fp-commit-service
+  template:
+    metadata:
+      labels:
+        app: fp-commit-service
+    spec:
+      containers:
+        - name: fp-commit-service
+          image: integrationworkspace/fp-commit-service:latest
+          ports:
+            - containerPort: 8180
+              protocol: TCP
+          env:
+            - name: KAFKA_HOST
+              value: kafka-cluster-kafka-bootstrap
+            - name: CASSANDRA_HOST
+              value: fp-cassandra
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fp-cassandra
+  labels:
+    app: fp-cassandra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fp-cassandra
+  template:
+    metadata:
+      labels:
+        app: fp-cassandra
+    spec:
+      containers:
+        - name: cassandra
+          image: cassandra:4
+          args: ["-R"]
+          ports:
+            - containerPort: 9042
+              protocol: TCP
