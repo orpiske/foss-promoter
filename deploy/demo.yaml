@@ -279,3 +279,67 @@ spec:
           emptyDir: { }
 
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-grafana
+  labels:
+    run: fp-grafana
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+  selector:
+    app: fp-grafana
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: fp-grafana
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: fp-grafana
+    weight: 100
+  wildcardPolicy: None
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fp-grafana
+  labels:
+    app: fp-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fp-grafana
+  template:
+    metadata:
+      labels:
+        app: fp-grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana-oss
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana
+          env:
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: "Admin"
+      volumes:
+        - name: grafana
+          emptyDir: { }
