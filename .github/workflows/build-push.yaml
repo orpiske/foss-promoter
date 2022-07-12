@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: reformat and build
+name: build and deploy images
 
 on:
   push:
