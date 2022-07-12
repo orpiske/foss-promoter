@@ -23,7 +23,7 @@ on:
       - main
       - telemetry
     paths-ignore:
-      - .github/**/*
+#      - .github/**/*
       - README.md
       - SECURITY.md
       - NOTICE.txt
