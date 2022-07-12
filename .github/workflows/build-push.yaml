@@ -23,7 +23,6 @@ on:
       - main
       - telemetry
     paths-ignore:
-#      - .github/**/*
       - README.md
       - SECURITY.md
       - NOTICE.txt
@@ -85,3 +84,12 @@ jobs:
           tags: |
             integrationworkspace/fp-commit-service:jbcn-latest
             integrationworkspace/fp-commit-service:latest
+      - name: Build and push (fp-prometheusd)
+        uses: docker/build-push-action@v3
+        with:
+          file: fp-prometheus/Dockerfile
+          context: fp-prometheus
+          push: true
+          tags: |
+            integrationworkspace/fp-prometheus:jbcn-latest
+            integrationworkspace/fp-prometheus:latest
