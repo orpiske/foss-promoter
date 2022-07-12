@@ -14,6 +14,21 @@ spec:
     app: fp-web
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-web
+  labels:
+    run: fp-web
+spec:
+  type: ClusterIP
+  ports:
+    - name: prometheus
+      port: 8180
+  selector:
+    app: fp-web
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,6 +65,23 @@ spec:
               value: kafka-cluster-kafka-bootstrap
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-repo-service
+  labels:
+    run: fp-repo-service
+spec:
+  type: ClusterIP
+  ports:
+    - name: prometheus
+      port: 8180
+    - name: camel-management-prometheus
+      port: 9404
+  selector:
+    app: fp-repo-service
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -84,7 +116,22 @@ spec:
           env:
             - name: KAFKA_HOST
               value: kafka-cluster-kafka-bootstrap
-                
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-commit-service
+  labels:
+    run: fp-commit-service
+spec:
+  type: ClusterIP
+  ports:
+    - name: prometheus
+      port: 8180
+  selector:
+    app: fp-commit-service
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -153,3 +200,82 @@ spec:
           ports:
             - containerPort: 9042
               protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-prometheus
+  labels:
+    run: fp-prometheus
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9090
+  selector:
+    app: fp-prometheus
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-prometheus-external
+  labels:
+    run: fp-prometheus
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 9090
+      nodePort: 30090
+  selector:
+    app: fp-prometheus
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: fp-prometheus
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: fp-prometheus
+    weight: 100
+  wildcardPolicy: None
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fp-prometheus
+  labels:
+    app: fp-prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fp-prometheus
+  template:
+    metadata:
+      labels:
+        app: fp-prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: integrationworkspace/fp-prometheus:jbcn-latest
+          args: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus", "--web.console.libraries=/usr/share/prometheus/console_libraries", "--web.console.templates=/usr/share/prometheus/consoles", "--web.config.file=/etc/prometheus/web.yml"]
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /prometheus
+              name: prometheus
+      volumes:
+        - name: prometheus
+          emptyDir: { }
+
+
