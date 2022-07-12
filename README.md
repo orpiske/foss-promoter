@@ -66,3 +66,10 @@ To test an invalid data input into the Web API service:
 ```shell
 curl --verbose -X POST http://localhost:8080/api/repository/ -H 'Accept: application/json' -H 'Content-Type: application/json' -d '{"nameeee": "https://github.com/apache/camel.git"}'
 ```
+
+# Try it on OpenShift
+
+1. Before starting, you must install the Strimzi operator.
+2. Create the Kafka cluster: `oc apply -f deploy/kafka-cluster.yaml`
+3. Create the Kafka topics: `oc apply -f deploy/topics/topics.yaml`
+4. Deploy the application: `oc apply -f deploy/demo.yaml` (see the note about Grafana).
