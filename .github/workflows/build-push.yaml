@@ -88,7 +88,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           file: fp-prometheus/Dockerfile
-          context: fp-prometheus
+          context: prometheus
           push: true
           tags: |
             integrationworkspace/fp-prometheus:jbcn-latest
