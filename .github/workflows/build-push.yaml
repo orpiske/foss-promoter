@@ -87,7 +87,7 @@ jobs:
       - name: Build and push (fp-prometheusd)
         uses: docker/build-push-action@v3
         with:
-          file: fp-prometheus/Dockerfile
+          file: prometheus/Dockerfile
           context: prometheus
           push: true
           tags: |
