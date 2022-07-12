@@ -117,6 +117,12 @@ spec:
           env:
             - name: KAFKA_HOST
               value: kafka-cluster-kafka-bootstrap
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          emptyDir: { }
 
 ---
 apiVersion: v1
