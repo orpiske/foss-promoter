@@ -114,6 +114,20 @@ spec:
             - name: CASSANDRA_HOST
               value: fp-cassandra
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fp-cassandra
+  labels:
+    run: fp-cassandra
+spec:
+  type: ClusterIP
+  ports:
+    - name: cql
+      port: 9042
+  selector:
+    app: fp-cassandra
 
 ---
 apiVersion: apps/v1
