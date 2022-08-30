@@ -73,3 +73,8 @@ curl --verbose -X POST http://localhost:8080/api/repository/ -H 'Accept: applica
 2. Create the Kafka cluster: `oc apply -f deploy/kafka-cluster.yaml`
 3. Create the Kafka topics: `oc apply -f deploy/topics/topics.yaml`
 4. Deploy the application: `oc apply -f deploy/demo.yaml` (see the note about Grafana).
+
+
+# Talk Demos
+
+- [JBCN 2022](https://github.com/orpiske/foss-promoter/tree/jbcn-2022)
