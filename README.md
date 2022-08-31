@@ -1,5 +1,20 @@
-# foss-promoter
+# FOSS Promoter
+
 FOSS Promoter demo with Camel Core
+
+# Idea
+
+This demo simulates the backend for fictional online shop that is specialized in creating customized swags for contributors
+and enthusiasts of Open Source software. One of the customization services offered by this company is a system that 
+generates custom swags based on the contributions made by someone to a git repository.
+
+![Design](docs/images/example-swag.png)
+
+# Design
+
+The design is made to maximize learning, discussion and feature coverage. 
+
+![Design](docs/images/design.png)
 
 # How to play with this demo.
 
