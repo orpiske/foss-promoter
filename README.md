@@ -78,3 +78,4 @@ curl --verbose -X POST http://localhost:8080/api/repository/ -H 'Accept: applica
 # Talk Demos
 
 - [JBCN 2022](https://github.com/orpiske/foss-promoter/tree/jbcn-2022)
+- [Live - Cloud Conference Days](https://github.com/orpiske/foss-promoter/tree/live-cloud-conference-days-2022)
