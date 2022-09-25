@@ -14,36 +14,36 @@
     <link rel="stylesheet" href="../../common/assets/css/site.css">
 </head>
 <body>
-<header>
-    <div>
-        <h1>FOSS Promoter</h1>
-    </div>
-</header>
-
 <main>
     <div>
-        <div class="add-repo-column">
-            <br>
-        </div>
-        <div class="add-repo-column">
-            <form>
-
-                <p>Adicione um novo repositório no sistema:</p>
-                <div class="uk-margin">
-                    <div class="uk-inline">
-                        <span class="uk-form-icon uk-form-icon-flip" uk-icon="icon: github"></span>
-                        <input class="uk-input" type="text">
+            <div class="uk-column-1-3">
+                <div class="uk-position-center">
+                    <form id="lala" new-repo-form api="hello" onsubmit="return addRepository();">
+                        <p class="uk-column-span">Adicione um novo repositório no sistema:</p>
+                        <div class="uk-margin">
+                            <div class="uk-inline">
+                                <span class="uk-form-icon uk-form-icon-flip" uk-icon="icon: github"></span>
+                                <input name="repository-url" id="repository-url" class="uk-input" type="type">
+                            </div>
+                        </div>
+                    </form>
+                    <div>
+                        <p id="whateves2">whatevs</p>
                     </div>
                 </div>
-            </form>
-        </div>
-
-        <div class="add-repo-column">
-            <br>
+            </div>
         </div>
     </div>
 
 </main>
 
+<!--Common stuff-->
+<script type="text/javascript" src="../../common/assets/node_modules/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="../../common/assets/node_modules/axios/dist/axios.min.js"></script>
+
+<!--Project code-->
+<script type="text/javascript" src="../../common/js/add-repo.js"></script>
+
 </body>
 </html>
+
