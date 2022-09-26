@@ -2,6 +2,9 @@ package org.foss.promoter.web.routes;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import com.fasterxml.jackson.core.JacksonException;
@@ -18,6 +21,8 @@ import org.foss.promoter.common.PrometheusRegistryUtil;
 import org.foss.promoter.common.data.ProcessingResponse;
 import org.foss.promoter.common.data.Repository;
 import org.foss.promoter.common.data.SystemInfo;
+import org.foss.promoter.common.data.Tracking;
+import org.foss.promoter.common.data.TrackingState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +32,7 @@ public class RepositoryRoute extends RouteBuilder {
     private final String bootstrapHost;
     private final int bootstrapPort;
     private final int servicePort;
+    private final Map<String, TrackingState> tracking = new HashMap<>();
 
     private final Properties properties;
 
@@ -88,6 +94,28 @@ public class RepositoryRoute extends RouteBuilder {
         exchange.getMessage().setBody(response);
     }
 
+    private void updateTracking(Exchange exchange) {
+        final Tracking trackingBody = exchange.getMessage().getBody(Tracking.class);
+        LOG.info("Adding new tracking info: {}", trackingBody);
+
+        tracking.computeIfAbsent(trackingBody.getTransactionId(), k -> new TrackingState(k)).getStates().add(trackingBody.getState());
+    }
+
+    private void processTracking(Exchange exchange) {
+        final Optional<TrackingState> stateOptional = tracking.values().stream().findFirst();
+
+        if (stateOptional.isPresent()) {
+            final TrackingState trackingState = stateOptional.get();
+            LOG.info("Retrieving tracking info: {}", trackingState);
+
+            exchange.getMessage().setBody(trackingState);
+            exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, "application/json");
+            exchange.getMessage().setHeader("has-tracking-data", true);
+        } else {
+            // The request is OK, but there's no content yet. So we return 204 (NO CONTENT)
+            exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, 204);
+        }
+    }
 
     @Override
     public void configure() {
@@ -113,6 +141,7 @@ public class RepositoryRoute extends RouteBuilder {
         rest("/api")
                 .get("/hello").to("direct:hello")
                 .get("/info").to("direct:info")
+                .get("/tracking").to("direct:tracking")
                 .post("/repository").type(Repository.class).to("direct:repository");
 
         from("direct:hello")
@@ -134,7 +163,17 @@ public class RepositoryRoute extends RouteBuilder {
                 .endChoice();
 
         fromF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort)
-                .log("${body}");
+                .routeId("web-tracking-consume")
+                .unmarshal().json(JsonLibrary.Jackson, Tracking.class)
+                .process(this::updateTracking);
+
+        from("direct:tracking")
+                .routeId("web-tracking-process")
+                .process(this::processTracking)
+                .choice()
+                    .when(header("has-tracking-data").isEqualTo(false)) // only marshal if there's data
+                        .marshal().json(JsonLibrary.Jackson)
+                .endChoice();
     }
 }
 
