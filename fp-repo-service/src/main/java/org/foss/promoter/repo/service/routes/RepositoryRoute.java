@@ -11,8 +11,10 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.eventnotifier.MicrometerRouteEventNotifier;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.foss.promoter.common.data.CommitInfo;
 import org.foss.promoter.common.data.Repository;
 import org.foss.promoter.common.data.Tracking;
 import org.slf4j.Logger;
@@ -63,44 +65,60 @@ public class RepositoryRoute extends RouteBuilder {
     }
 
 
-    private void doSend(RevCommit rc) {
-        LOG.debug("Commit message: {}", rc.getShortMessage());
+    private void doSend(RevCommit rc, String projectName) {
+        CommitInfo commitInfo = new CommitInfo();
+        commitInfo.setProjectName(projectName);
 
-        producerTemplate.sendBody("direct:collected", rc.getShortMessage());
+        final PersonIdent authorIdent = rc.getAuthorIdent();
+        commitInfo.setAuthorName(authorIdent.getName());
+        commitInfo.setAuthorEmail(authorIdent.getEmailAddress());
+        commitInfo.setMessage(rc.getShortMessage());
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Commit message: {}", rc.getShortMessage());
+        }
+
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Commit date time: {}", authorIdent.getWhenAsInstant());
+        }
+
+        commitInfo.setDate(authorIdent.getWhenAsInstant().toString());
+
+        producerTemplate.sendBody("direct:collected", commitInfo);
     }
 
     private void processLogEntry(Exchange exchange) {
         LOG.info("Processing log entries");
         RevWalk walk = exchange.getMessage().getBody(RevWalk.class);
 
-        walk.forEach(this::doSend);
+        final String name = exchange.getMessage().getHeader("name", String.class);
+
+        walk.forEach(r -> doSend(r, name));
+    }
+
+    private static void setTrackingState(String state, Exchange exchange) {
+        Tracking tracking = new Tracking();
+
+        tracking.setState(state);
+        tracking.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
+
+        exchange.getMessage().setBody(tracking);
     }
 
     private void processCloning(Exchange exchange) {
-        Tracking tracking = new Tracking();
-
-        tracking.setState("cloning");
-        tracking.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
-
-        exchange.getMessage().setBody(tracking);
+        setTrackingState("cloning", exchange);
     }
 
     private void processPulling(Exchange exchange) {
-        Tracking tracking = new Tracking();
-
-        tracking.setState("pulling");
-        tracking.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
-
-        exchange.getMessage().setBody(tracking);
+        setTrackingState("pulling", exchange);
     }
 
     private void processReadingLog(Exchange exchange) {
-        Tracking tracking = new Tracking();
+        setTrackingState("reading-log", exchange);
+    }
 
-        tracking.setState("reading-log");
-        tracking.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
-
-        exchange.getMessage().setBody(tracking);
+    private void processReadLog(Exchange exchange) {
+        setTrackingState("read-log", exchange);
     }
 
     @Override
@@ -178,10 +196,15 @@ public class RepositoryRoute extends RouteBuilder {
                 .routeId("repositories-log")
                 .toD(String.format("git://%s/${header.name}?operation=log", dataDir))
                 .process(this::processLogEntry)
-                .to("direct:collected");
+                .to("direct:readLog");
 
         from("direct:readingLog")
                 .process(this::processReadingLog)
+                .marshal().json(JsonLibrary.Jackson)
+                .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
+
+        from("direct:readLog")
+                .process(this::processReadLog)
                 .marshal().json(JsonLibrary.Jackson)
                 .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
 
@@ -190,6 +213,7 @@ public class RepositoryRoute extends RouteBuilder {
                 // For the demo: this one is really cool, because without it, sending to Kafka is quite slow
 //                .aggregate(constant(true)).completionSize(20).aggregationStrategy(AggregationStrategies.groupedBody())
 //                .threads(5)
+                .marshal().json(JsonLibrary.Jackson)
                 .toF("kafka:commits?brokers=%s:%d", bootstrapHost, bootstrapPort);
     }
 

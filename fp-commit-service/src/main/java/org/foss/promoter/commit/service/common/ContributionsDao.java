@@ -73,8 +73,13 @@ public class ContributionsDao {
         SimpleStatement statement = SchemaBuilder.createTable(TABLE_NAME)
                 .ifNotExists()
                 .withPartitionKey("id", DataTypes.TIMEUUID)
-                .withClusteringColumn("text", DataTypes.TEXT)
+                .withClusteringColumn("project", DataTypes.TEXT)
+                .withColumn("author", DataTypes.TEXT)
+                .withColumn("email", DataTypes.TEXT)
+                .withColumn("date", DataTypes.TEXT)
+                .withColumn("message", DataTypes.TEXT)
                 .withColumn("qr_code", DataTypes.BLOB)
+
                 .builder()
                 .setTimeout(Duration.ofSeconds(10)).build();
 
@@ -90,7 +95,11 @@ public class ContributionsDao {
         SimpleStatement statement = QueryBuilder
                 .insertInto(TABLE_NAME)
                 .value("id", QueryBuilder.now())
-                .value("text", QueryBuilder.bindMarker())
+                .value("project", QueryBuilder.bindMarker())
+                .value("author", QueryBuilder.bindMarker())
+                .value("email", QueryBuilder.bindMarker())
+                .value("date", QueryBuilder.bindMarker())
+                .value("message", QueryBuilder.bindMarker())
                 .value("qr_code", QueryBuilder.bindMarker())
                 .build();
 
@@ -101,7 +110,11 @@ public class ContributionsDao {
         SimpleStatement statement = QueryBuilder
                 .selectFrom(TABLE_NAME)
                 .toDate("id").as("insertion_date")
-                .column("text")
+                .column("project")
+                .column("author")
+                .column("email")
+                .column("date")
+                .column("message")
                 .column("qr_code")
                 .limit(limitSize)
                 .build();

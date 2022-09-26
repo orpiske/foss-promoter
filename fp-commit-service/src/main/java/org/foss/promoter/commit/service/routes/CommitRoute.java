@@ -19,8 +19,10 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.MicrometerConstants;
 import org.apache.camel.component.micrometer.eventnotifier.MicrometerRouteEventNotifier;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
+import org.apache.camel.model.dataformat.JsonLibrary;
 import org.foss.promoter.commit.service.common.ContributionsDao;
 import org.foss.promoter.common.PrometheusRegistryUtil;
+import org.foss.promoter.common.data.CommitInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +45,9 @@ public class CommitRoute extends RouteBuilder {
     }
 
     private void process(Exchange exchange) {
-        String message = exchange.getMessage().getBody(String.class);
+        CommitInfo commitInfo = exchange.getMessage().getBody(CommitInfo.class);
+        String message = commitInfo.getMessage();
+
         LOG.debug("Generating for: {}", message);
 
         QRCodeWriter barcodeWriter = new QRCodeWriter();
@@ -56,7 +60,7 @@ public class CommitRoute extends RouteBuilder {
             ImageIO.write(bufferedImage, "png", bos);
             LOG.trace("Done!");
 
-            exchange.getMessage().setBody(Arrays.asList(message, ByteBuffer.wrap(bos.toByteArray())));
+            exchange.getMessage().setBody(Arrays.asList(commitInfo.getProjectName(), commitInfo.getAuthorName(), commitInfo.getAuthorEmail(), commitInfo.getDate(), message, ByteBuffer.wrap(bos.toByteArray())));
         } catch (WriterException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -76,6 +80,7 @@ public class CommitRoute extends RouteBuilder {
         fromF("kafka:commits?brokers=%s:%d&consumersCount=%d&groupId=fp-commit-service", bootstrapHost, bootstrapPort, consumersCount)
                 .routeId("commit-qr")
                 .threads(3)
+                .unmarshal().json(JsonLibrary.Jackson, CommitInfo.class)
                 .process(this::process)
                 .toF("cql://%s:%d/%s?cql=%s", cassandraServer, cassandraPort, ContributionsDao.KEY_SPACE,
                         ContributionsDao.getInsertStatement());
