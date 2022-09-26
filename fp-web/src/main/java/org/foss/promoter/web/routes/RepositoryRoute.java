@@ -97,7 +97,7 @@ public class RepositoryRoute extends RouteBuilder {
         final Tracking trackingBody = exchange.getMessage().getBody(Tracking.class);
         LOG.info("Adding new tracking info: {}", trackingBody);
 
-        tracking.computeIfAbsent(trackingBody.getTransactionId(), k -> new TrackingState(k)).getStates().add(trackingBody.getState());
+        tracking.computeIfAbsent(trackingBody.getTransactionId(), k -> new TrackingState(k)).setState(trackingBody.getState());
     }
 
     private void processTracking(Exchange exchange) {

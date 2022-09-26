@@ -1,22 +1,30 @@
 var completed = false;
+var lastState = ""
 
 function renderStates(tracking) {
-    for (let i in tracking.states) {
-        if (tracking.states[i] == "cloning") {
-            UIkit.notification('Cloning repository');
+     if (lastState != tracking.state) {
+        lastState = tracking.state
+
+        if (tracking.state == "cloning") {
+            UIkit.notification({message: 'Cloning repository', pos: 'bottom-center'});
         }
 
-        if (tracking.states[i] == "pulling") {
-            UIkit.notification('Pulling repository');
+        if (tracking.state == "pulling") {
+            UIkit.notification({message: 'Pulling repository', pos: 'bottom-center'});
         }
 
-        if (tracking.states[i] == "reading-log") {
-            UIkit.notification('Reading commit log');
+        if (tracking.state == "reading-log") {
+            UIkit.notification({message: 'Starting to read the commit log', pos: 'bottom-center'});
+
+        }
+
+        if (tracking.state == "read-log") {
+            UIkit.notification({message: 'Reading commit log complete', pos: 'bottom-center'});
 
             completed = true;
             return;
         }
-    }
+     }
 }
 
 function updateStates(transactionId) {
@@ -60,6 +68,8 @@ function addRepository() {
                         clearInterval(timeout)
                         $("#search-form").fadeIn();
                         $("#wait-for-repo-spinner").fadeOut();
+
+                        lastState = ""
                     }
                 }, 1000)
 
