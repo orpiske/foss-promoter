@@ -13,6 +13,10 @@ function addRepository() {
         .then(function(response) {
             console.debug(response)
             console.debug("Done adding repository: " + response.data.state)
+
+            if (response.data.state == "OK") {
+                $("#search-form").fadeOut()
+            }
            })
         .catch(function(error) {
             console.log(error)
