@@ -1,5 +1,9 @@
 package org.foss.promoter.web.routes;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import com.fasterxml.jackson.core.JacksonException;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.camel.Exchange;
@@ -9,6 +13,7 @@ import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFa
 import org.apache.camel.model.rest.RestBindingMode;
 import org.foss.promoter.common.PrometheusRegistryUtil;
 import org.foss.promoter.common.data.Repository;
+import org.foss.promoter.common.data.SystemInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +24,22 @@ public class RepositoryRoute extends RouteBuilder {
     private final int bootstrapPort;
     private final int servicePort;
 
+    private final Properties properties;
+
     public RepositoryRoute(String bootstrapHost, int bootstrapPort, int servicePort) {
         this.bootstrapHost = bootstrapHost;
         this.bootstrapPort = bootstrapPort;
         this.servicePort = servicePort;
+
+
+        this.properties = new Properties();
+        try (final InputStream versionStream = this.getClass().getResourceAsStream("/version.properties")) {
+            properties.load(versionStream);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
     private void processRepository(Exchange exchange) {
@@ -46,6 +63,17 @@ public class RepositoryRoute extends RouteBuilder {
         exchange.getMessage().setBody(body.getName());
     }
 
+    public SystemInfo getSystemInfo() {
+        return new SystemInfo(properties.getProperty("project.version"), properties.getProperty("camel.version"), properties.getProperty("kafka.client.version"));
+    }
+
+    private void processSystemInfo(Exchange exchange) {
+        SystemInfo systemInfo = getSystemInfo();
+        exchange.getMessage().setBody(systemInfo);
+    }
+
+
+
     @Override
     public void configure() {
         MeterRegistry registry = PrometheusRegistryUtil.getMetricRegistry();
@@ -64,15 +92,23 @@ public class RepositoryRoute extends RouteBuilder {
 
         rest("/api")
                 .get("/hello").to("direct:hello")
+                .get("/info").to("direct:info")
                 .post("/repository").type(Repository.class).to("direct:repository");
 
         from("direct:hello")
                 .routeId("web-hello")
+                .setHeader("Access-Control-Allow-Origin", constant("*"))
                 .transform().constant("Hello World");
+
+        from("direct:info")
+                .routeId("web-info")
+                .setHeader("Access-Control-Allow-Origin", constant("*"))
+                .process(this::processSystemInfo);
 
         from("direct:repository")
                 .routeId("web-repository")
                 .process(this::processRepository)
+                .setHeader("Access-Control-Allow-Origin", constant("*"))
                 .choice()
                     .when(header("valid").isEqualTo(true))
                         .toF("kafka:repositories?brokers=%s:%d", bootstrapHost, bootstrapPort)
