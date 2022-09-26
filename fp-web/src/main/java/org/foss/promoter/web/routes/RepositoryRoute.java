@@ -11,7 +11,9 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.MicrometerConstants;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
+import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.foss.promoter.common.PrometheusRegistryUtil;
 import org.foss.promoter.common.data.ProcessingResponse;
 import org.foss.promoter.common.data.Repository;
@@ -60,7 +62,11 @@ public class RepositoryRoute extends RouteBuilder {
             LOG.debug("Received -> repository {}", body);
         }
 
-        exchange.getMessage().setBody(body.getName());
+        if (body.getTransactionId() == null || body.getTransactionId().isEmpty()) {
+            String transactionId = RandomStringUtils.randomAlphanumeric(12);
+            body.setTransactionId(transactionId);
+            exchange.getMessage().setHeader("transaction-id", transactionId);
+        }
     }
 
     public SystemInfo getSystemInfo() {
@@ -78,6 +84,7 @@ public class RepositoryRoute extends RouteBuilder {
 
         ProcessingResponse response = new ProcessingResponse();
         response.setState("OK");
+        response.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
         exchange.getMessage().setBody(response);
     }
 
@@ -121,9 +128,13 @@ public class RepositoryRoute extends RouteBuilder {
                 .process(this::processRepository)
                 .choice()
                     .when(header("valid").isEqualTo(true))
+                        .marshal().json(JsonLibrary.Jackson)
                         .toF("kafka:repositories?brokers=%s:%d", bootstrapHost, bootstrapPort)
                         .process(this::processSuccessfulResponse)
                 .endChoice();
+
+        fromF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort)
+                .log("${body}");
     }
 }
 

@@ -4,13 +4,17 @@ import java.io.File;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.camel.Exchange;
+import org.apache.camel.ExchangePattern;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.eventnotifier.MicrometerRouteEventNotifier;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
+import org.apache.camel.model.dataformat.JsonLibrary;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.foss.promoter.common.data.Repository;
+import org.foss.promoter.common.data.Tracking;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,22 +36,25 @@ public class RepositoryRoute extends RouteBuilder {
     }
 
     private void process(Exchange exchange) {
-        String repo = exchange.getMessage().getBody(String.class);
+        Repository repo = exchange.getMessage().getBody(Repository.class);
 
         if (repo == null) {
             exchange.getMessage().setHeader("valid", false);
+            LOG.error("A null repository was provided");
             return;
         }
 
-        final String[] parts = repo.split("/");
+        final String[] parts = repo.getName().split("/");
         if (parts == null || parts.length == 0) {
             exchange.getMessage().setHeader("valid", false);
+            LOG.error("An invalid repository was provided for transaction {}", repo.getTransactionId());
             return;
         }
 
         var name = parts[parts.length - 1];
         exchange.getMessage().setHeader("valid", true);
         exchange.getMessage().setHeader("name", name);
+        exchange.getMessage().setHeader("transaction-id", repo.getTransactionId());
 
         File repoDir = new File(dataDir, name);
         exchange.getMessage().setHeader("exists", repoDir.exists() && repoDir.isDirectory());
@@ -69,6 +76,33 @@ public class RepositoryRoute extends RouteBuilder {
         walk.forEach(this::doSend);
     }
 
+    private void processCloning(Exchange exchange) {
+        Tracking tracking = new Tracking();
+
+        tracking.setState("cloning");
+        tracking.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
+
+        exchange.getMessage().setBody(tracking);
+    }
+
+    private void processPulling(Exchange exchange) {
+        Tracking tracking = new Tracking();
+
+        tracking.setState("pulling");
+        tracking.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
+
+        exchange.getMessage().setBody(tracking);
+    }
+
+    private void processReadingLog(Exchange exchange) {
+        Tracking tracking = new Tracking();
+
+        tracking.setState("reading-log");
+        tracking.setTransactionId(exchange.getMessage().getHeader("transaction-id", String.class));
+
+        exchange.getMessage().setBody(tracking);
+    }
+
     @Override
     public void configure() {
         producerTemplate = getContext().createProducerTemplate();
@@ -88,6 +122,7 @@ public class RepositoryRoute extends RouteBuilder {
         // Handles the request body
         fromF("kafka:repositories?brokers=%s:%d", bootstrapHost, bootstrapPort)
                 .routeId("repositories")
+                .unmarshal().json(JsonLibrary.Jackson, Repository.class)
                 .process(this::process)
                 .choice()
                 .when(header("valid").isEqualTo(true))
@@ -104,15 +139,34 @@ public class RepositoryRoute extends RouteBuilder {
                 .otherwise()
                     .to("direct:pull")
                 .end()
-                .to("direct:log");
+                .multicast()
+                    .to("direct:readingLog")
+                    .to("direct:log");
 
+        // Handles cloning the repository
         from("direct:clone")
                 .routeId("repositories-clone")
-                .toD(String.format("git://%s/${header.name}?operation=clone&remotePath=${body}", dataDir));
+                .multicast()
+                    .to(ExchangePattern.InOnly, "direct:cloning")
+                    .toD(String.format("git://%s/${header.name}?operation=clone&remotePath=${body.name}", dataDir));
 
+        from("direct:cloning")
+                .process(this::processCloning)
+                .marshal().json(JsonLibrary.Jackson)
+                .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
+
+
+        // Handles pulling the repository (i.e.: if it has been cloned in the past)
         from("direct:pull")
                 .routeId("repositories-pull")
-                .toD(String.format("git://%s/${header.name}?operation=pull&remoteName=origin", dataDir));
+                .multicast()
+                    .to(ExchangePattern.InOnly, "direct:pulling")
+                    .toD(String.format("git://%s/${header.name}?operation=pull&remoteName=origin", dataDir));
+
+        from("direct:pulling")
+                .process(this::processPulling)
+                .marshal().json(JsonLibrary.Jackson)
+                .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
 
         // Logs if invalid stuff is provided
         from("direct:invalid")
@@ -125,6 +179,11 @@ public class RepositoryRoute extends RouteBuilder {
                 .toD(String.format("git://%s/${header.name}?operation=log", dataDir))
                 .process(this::processLogEntry)
                 .to("direct:collected");
+
+        from("direct:readingLog")
+                .process(this::processReadingLog)
+                .marshal().json(JsonLibrary.Jackson)
+                .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
 
         from("direct:collected")
                 .routeId("repositories-collected")

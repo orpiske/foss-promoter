@@ -30,6 +30,7 @@
         <version.cxf>3.5.2</version.cxf>
         <version.jax-ws-rs>2.1.1</version.jax-ws-rs>
         <version.jackson>2.13.3</version.jackson>
+        <version.commons.lang>3.12.0</version.commons.lang>
 
 
         <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
@@ -69,6 +70,12 @@
                 <groupId>com.google.zxing</groupId>
                 <artifactId>javase</artifactId>
                 <version>${zxing.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.commons.lang}</version>
             </dependency>
 
             <!-- for the CLI -->
