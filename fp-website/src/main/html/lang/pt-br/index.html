@@ -31,14 +31,17 @@
     <div class="uk-container uk-container-large">
         <div class="uk-position-center">
             <div>
-                <form id="search-form" new-repo-form api="repository" onsubmit="return addRepository();">
-                    <p class="uk-column-span">Adicione um novo repositório no sistema:</p>
-                    <div class="uk-margin">
-                        <div class="uk-inline">
-                            <span class="uk-form-icon uk-form-icon-flip" uk-icon="icon: github"></span>
-                            <input name="repository-url" id="repository-url" class="uk-input" type="type">
+                <form id="repo-form" new-repo-form api="repository" onsubmit="return addRepository();">
+                    <fieldset class="uk-fieldset">
+                        <legend class="uk-legend">Adicione um novo repositório</legend>
+                        <div class="uk-margin">
+                            <div class="uk-inline">
+                                <span class="uk-form-icon" uk-icon="icon: github"></span>
+                                <input class="uk-input uk-form-width-large" name="repository-url" id="repository-url"
+                                       type="text" placeholder="http://github.com/">
+                            </div>
                         </div>
-                    </div>
+                    </fieldset>
                 </form>
 
                 <div uk-spinner="ratio: 3" id="wait-for-repo-spinner"></div>
