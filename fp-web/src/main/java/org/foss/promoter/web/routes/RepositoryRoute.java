@@ -7,6 +7,7 @@ import java.util.Properties;
 import com.fasterxml.jackson.core.JacksonException;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.MicrometerConstants;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
@@ -38,8 +39,6 @@ public class RepositoryRoute extends RouteBuilder {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
     }
 
     private void processRepository(Exchange exchange) {
@@ -81,7 +80,11 @@ public class RepositoryRoute extends RouteBuilder {
         getContext().getRegistry().bind(MicrometerConstants.METRICS_REGISTRY_NAME, registry);
         getContext().addRoutePolicyFactory(new MicrometerRoutePolicyFactory());
 
-        restConfiguration().component("netty-http").host("0.0.0.0").port(servicePort).bindingMode(RestBindingMode.json);
+        restConfiguration().component("netty-http")
+                .host("0.0.0.0")
+                .port(servicePort)
+                .enableCORS(true)
+                .bindingMode(RestBindingMode.json);
 
         onException(JacksonException.class)
                 .routeId("web-invalid-json")
@@ -97,18 +100,15 @@ public class RepositoryRoute extends RouteBuilder {
 
         from("direct:hello")
                 .routeId("web-hello")
-                .setHeader("Access-Control-Allow-Origin", constant("*"))
                 .transform().constant("Hello World");
 
         from("direct:info")
                 .routeId("web-info")
-                .setHeader("Access-Control-Allow-Origin", constant("*"))
                 .process(this::processSystemInfo);
 
         from("direct:repository")
                 .routeId("web-repository")
                 .process(this::processRepository)
-                .setHeader("Access-Control-Allow-Origin", constant("*"))
                 .choice()
                     .when(header("valid").isEqualTo(true))
                         .toF("kafka:repositories?brokers=%s:%d", bootstrapHost, bootstrapPort)
