@@ -7,12 +7,13 @@ import java.util.Properties;
 import com.fasterxml.jackson.core.JacksonException;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.MicrometerConstants;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.foss.promoter.common.PrometheusRegistryUtil;
+import org.foss.promoter.common.data.ProcessingResponse;
 import org.foss.promoter.common.data.Repository;
 import org.foss.promoter.common.data.SystemInfo;
 import org.slf4j.Logger;
@@ -71,6 +72,14 @@ public class RepositoryRoute extends RouteBuilder {
         exchange.getMessage().setBody(systemInfo);
     }
 
+    private void processSuccessfulResponse(Exchange exchange) {
+        exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, "application/json");
+        exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, 200);
+
+        ProcessingResponse response = new ProcessingResponse();
+        response.setState("OK");
+        exchange.getMessage().setBody(response);
+    }
 
 
     @Override
@@ -91,6 +100,7 @@ public class RepositoryRoute extends RouteBuilder {
                 .handled(true)
                 .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(400))
                 .setHeader(Exchange.CONTENT_TYPE, constant("text/plain"))
+                .log(LoggingLevel.ERROR,  "Failed to process data: ${body}")
                 .setBody().constant("Invalid json data");
 
         rest("/api")
@@ -112,6 +122,7 @@ public class RepositoryRoute extends RouteBuilder {
                 .choice()
                     .when(header("valid").isEqualTo(true))
                         .toF("kafka:repositories?brokers=%s:%d", bootstrapHost, bootstrapPort)
+                        .process(this::processSuccessfulResponse)
                 .endChoice();
     }
 }

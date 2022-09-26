@@ -3,15 +3,16 @@ function addRepository() {
     var newRepoApi = "http://localhost:8080/api/" + $('[new-repo-form]').attr('api');
 
     var repositoryName = document.getElementById("repository-url");
-
-    console.log("Adding repository: " + newRepoApi);
-    console.log("Adding repository with value: " + repositoryName.value);
+    console.debug("Adding repository to: " + newRepoApi);
+    console.debug("Adding repository with value: " + repositoryName.value);
 
     axios
-        .post(newRepoApi, {  name: "someName" })
+        .post(newRepoApi, {
+            name: repositoryName.value
+        })
         .then(function(response) {
-            console.log(response)
-            console.log("Done adding repository")
+            console.debug(response)
+            console.debug("Done adding repository: " + response.data.state)
            })
         .catch(function(error) {
             console.log(error)
@@ -21,7 +22,7 @@ function addRepository() {
 }
 
 $(document).ready(function () {
-    console.log("Loading page")
+    console.debug("Loading page")
 
     axios.get("http://localhost:8080/api/info", {})
         .then(function (response) {
@@ -37,8 +38,6 @@ $(document).ready(function () {
             $("#camel-version").text("undefined")
             $("#kafka-client-version").text("undefined")
         });
-
-    console.log("Did it work?");
 })
 
 
