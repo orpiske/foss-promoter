@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 
 import com.fasterxml.jackson.core.JacksonException;
@@ -102,10 +101,12 @@ public class RepositoryRoute extends RouteBuilder {
     }
 
     private void processTracking(Exchange exchange) {
-        final Optional<TrackingState> stateOptional = tracking.values().stream().findFirst();
 
-        if (stateOptional.isPresent()) {
-            final TrackingState trackingState = stateOptional.get();
+        final String trackingId = exchange.getMessage().getHeader("id", String.class);
+
+        final TrackingState trackingState = tracking.get(trackingId);
+
+        if (trackingState != null) {
             LOG.info("Retrieving tracking info: {}", trackingState);
 
             exchange.getMessage().setBody(trackingState);
@@ -141,7 +142,7 @@ public class RepositoryRoute extends RouteBuilder {
         rest("/api")
                 .get("/hello").to("direct:hello")
                 .get("/info").to("direct:info")
-                .get("/tracking").to("direct:tracking")
+                .get("/tracking/{id}").to("direct:tracking")
                 .post("/repository").type(Repository.class).to("direct:repository");
 
         from("direct:hello")
