@@ -28,8 +28,8 @@ $(document).ready(function () {
         .then(function (response) {
             console.log(response)
             $("#project-version").text(response.data.projectVersion)
-            $("#camel-version").text(response.data.projectVersion)
-            $("#kafka-client-version").text(response.data.projectVersion)
+            $("#camel-version").text(response.data.camelVersion)
+            $("#kafka-client-version").text(response.data.kafkaClientVersion)
         })
         .catch(function (error) {
             console.log(error)
