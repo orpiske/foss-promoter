@@ -48,7 +48,7 @@ function addRepository() {
     console.debug("Adding repository with value: " + repositoryName.value);
 
     $("#wait-for-repo-spinner").show();
-    $("#repo-form").fadeOut()
+    $("#repo-form").hide()
     axios
         .post(newRepoApi, {
             name: repositoryName.value
@@ -66,8 +66,8 @@ function addRepository() {
 
                     if (completed == true || count > 60) {
                         clearInterval(timeout)
-                        $("#repo-form").fadeIn();
-                        $("#wait-for-repo-spinner").fadeOut();
+                        $("#repo-form").show();
+                        $("#wait-for-repo-spinner").hide();
 
                         lastState = ""
                     }
