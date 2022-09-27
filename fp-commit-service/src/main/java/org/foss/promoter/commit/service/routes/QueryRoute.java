@@ -56,7 +56,6 @@ public class QueryRoute extends RouteBuilder {
             Contributions contributions = new Contributions();
             contributions.setContributionList(contributionList);
 
-            exchange.getMessage().setHeader("has-query-data", true);
             exchange.getMessage().setBody(contributions);
         } catch (Exception e) {
             LOG.error("Unable to process request for email {}: {}", email, e.getMessage(), e);
@@ -94,11 +93,7 @@ public class QueryRoute extends RouteBuilder {
         from("direct:queryEmail")
                 .routeId("query-author")
                 .log("Received ${body} for email ${header.email}")
-                .process(this::processQueryEmail)
-                .choice()
-                .when(header("has-query-data").isEqualTo(false)) // only marshal if there's data
-                    .marshal().json(JsonLibrary.Jackson)
-                .endChoice();
+                .process(this::processQueryEmail);
 
     }
 }
