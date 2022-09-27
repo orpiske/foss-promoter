@@ -77,11 +77,13 @@ function searchContributions() {
                 console.debug("Done searching for contribution: " + response.data.state)
 
                 for (let i = 0; i < response.data.contributionList.length; i++) {
-                    console.log(response.data.contributionList[i].commitInfo.message)
+//                    console.log(response.data.contributionList[i].commitInfo.message)
 
                     var div = "<p>" + response.data.contributionList[i].commitInfo.message + "</p>"
 
-                    var img = "<img uk-cover height=\"256\" width=\"256\" src=\"data:image/png;base64," + response.data.contributionList[i].encodedQrCode + "\">"
+                    var img = "<img uk-cover height=\"256\" width=\"256\" src=\"data:image/png;base64,"
+                        + response.data.contributionList[i].encodedQrCode + "\" "
+                        + "uk-tooltip=\"title: " + response.data.contributionList[i].commitInfo.message + "; pos: bottom\">"
 
                     $("#slideshow-qrs").append("<li>" + img + div + "</li>")
                 }
