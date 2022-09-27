@@ -17,6 +17,12 @@ public class FPWebMain implements Callable<Integer> {
     @CommandLine.Option(names = {"-p", "--bootstrap-server-port"}, description = "The Kafka bootstrap server port to use", defaultValue = "9092")
     private int bootstrapPort;
 
+    @CommandLine.Option(names = {"--commit-service-host"}, description = "The commit service host to use", defaultValue = "fp-commit-service")
+    private String commitServiceHost;
+
+    @CommandLine.Option(names = {"--commit-service-port"}, description = "The commit service port to use", defaultValue = "8080")
+    private int commitServicePort;
+
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
     private boolean helpRequested = false;
 
@@ -24,7 +30,7 @@ public class FPWebMain implements Callable<Integer> {
     public Integer call() throws Exception {
         Main main = new Main();
 
-        main.configure().addRoutesBuilder(new RepositoryRoute(bootstrapServer, bootstrapPort, servicePort));
+        main.configure().addRoutesBuilder(new RepositoryRoute(bootstrapServer, bootstrapPort, servicePort, commitServiceHost, commitServicePort));
 
         main.run();
         return 0;

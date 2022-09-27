@@ -13,8 +13,10 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.micrometer.MicrometerConstants;
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
+import org.apache.camel.model.dataformat.Base64DataFormat;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
+import org.apache.camel.spi.DataFormat;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.foss.promoter.common.PrometheusRegistryUtil;
 import org.foss.promoter.common.data.ProcessingResponse;
@@ -31,14 +33,19 @@ public class RepositoryRoute extends RouteBuilder {
     private final String bootstrapHost;
     private final int bootstrapPort;
     private final int servicePort;
+    private final String commitServiceHost;
+    private final int commitServicePort;
+
     private final Map<String, TrackingState> tracking = new HashMap<>();
 
     private final Properties properties;
 
-    public RepositoryRoute(String bootstrapHost, int bootstrapPort, int servicePort) {
+    public RepositoryRoute(String bootstrapHost, int bootstrapPort, int servicePort, String commitServiceHost, int commitServicePort) {
         this.bootstrapHost = bootstrapHost;
         this.bootstrapPort = bootstrapPort;
         this.servicePort = servicePort;
+        this.commitServiceHost = commitServiceHost;
+        this.commitServicePort = commitServicePort;
 
 
         this.properties = new Properties();
@@ -143,6 +150,7 @@ public class RepositoryRoute extends RouteBuilder {
                 .get("/hello").to("direct:hello")
                 .get("/info").to("direct:info")
                 .get("/tracking/{id}").to("direct:tracking")
+                .get("/query/email/{contributorEmail}").to("direct:queryAuthorEmail")
                 .post("/repository").type(Repository.class).to("direct:repository");
 
         from("direct:hello")
@@ -175,6 +183,14 @@ public class RepositoryRoute extends RouteBuilder {
                     .when(header("has-tracking-data").isEqualTo(false)) // only marshal if there's data
                         .marshal().json(JsonLibrary.Jackson)
                 .endChoice();
+
+        from("direct:queryAuthorEmail")
+                .removeHeaders("CamelHttp*")
+                .setHeader("Content-Type", constant("application/json"))
+                .setHeader("Accept", constant("application/json"))
+                .setHeader(Exchange.HTTP_METHOD, constant("GET"))
+                .toD(String.format("http://%s:%d/api/query/email/${header.contributorEmail}", commitServiceHost, commitServicePort))
+                .unmarshal().json(JsonLibrary.Jackson);
     }
 }
 

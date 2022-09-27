@@ -14,6 +14,7 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.foss.promoter.commit.service.common.CassandraClient;
 import org.foss.promoter.commit.service.common.ContributionsDao;
 import org.foss.promoter.common.data.Contribution;
+import org.foss.promoter.common.data.Contributions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,11 @@ public class QueryRoute extends RouteBuilder {
                 return;
             }
 
-            exchange.getMessage().setBody(contributionList);
+            Contributions contributions = new Contributions();
+            contributions.setContributionList(contributionList);
+
+            exchange.getMessage().setHeader("has-query-data", true);
+            exchange.getMessage().setBody(contributions);
         } catch (Exception e) {
             LOG.error("Unable to process request for email {}: {}", email, e.getMessage(), e);
             exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, 500);
@@ -88,9 +93,10 @@ public class QueryRoute extends RouteBuilder {
 
         from("direct:queryEmail")
                 .routeId("query-author")
+                .log("Received ${body} for email ${header.email}")
                 .process(this::processQueryEmail)
                 .choice()
-                .when(header("has-tracking-data").isEqualTo(false)) // only marshal if there's data
+                .when(header("has-query-data").isEqualTo(false)) // only marshal if there's data
                     .marshal().json(JsonLibrary.Jackson)
                 .endChoice();
 
