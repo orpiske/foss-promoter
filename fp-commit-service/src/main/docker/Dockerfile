@@ -24,5 +24,9 @@ COPY target/fp-*with-dependencies.jar ${DEPLOYMENT_DIR}/commit-service.jar
 COPY src/main/scripts/run.sh ${DEPLOYMENT_DIR}/run.sh
 
 RUN chmod +x ${DEPLOYMENT_DIR}/*.sh
+
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/api/hello || exit 1
+
 WORKDIR ${DEPLOYMENT_DIR}
 CMD [ "sh", "-c", "${DEPLOYMENT_DIR}/run.sh" ]
