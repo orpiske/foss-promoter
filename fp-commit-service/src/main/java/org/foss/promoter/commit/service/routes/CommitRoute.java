@@ -21,7 +21,6 @@ import org.apache.camel.component.micrometer.eventnotifier.MicrometerRouteEventN
 import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.foss.promoter.commit.service.common.ContributionsDao;
-import org.foss.promoter.common.PrometheusRegistryUtil;
 import org.foss.promoter.common.data.CommitInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +33,16 @@ public class CommitRoute extends RouteBuilder {
     private final int cassandraPort;
     private final int imageSize;
     private final int consumersCount;
+    private final MeterRegistry registry;
 
-    public CommitRoute(String bootstrapHost, int bootstrapPort, String cassandraServer, int cassandraPort, int imageSize, int consumersCount) {
+    public CommitRoute(String bootstrapHost, int bootstrapPort, String cassandraServer, int cassandraPort, int imageSize, int consumersCount, MeterRegistry registry) {
         this.bootstrapHost = bootstrapHost;
         this.bootstrapPort = bootstrapPort;
         this.cassandraServer = cassandraServer;
         this.cassandraPort = cassandraPort;
         this.imageSize = imageSize;
         this.consumersCount = consumersCount;
+        this.registry = registry;
     }
 
     private void process(Exchange exchange) {
@@ -68,8 +69,6 @@ public class CommitRoute extends RouteBuilder {
 
     @Override
     public void configure() {
-        MeterRegistry registry = PrometheusRegistryUtil.getMetricRegistry();
-
         // Add the registry
         getContext().getRegistry().bind(MicrometerConstants.METRICS_REGISTRY_NAME, registry);
         // Expose route statistics

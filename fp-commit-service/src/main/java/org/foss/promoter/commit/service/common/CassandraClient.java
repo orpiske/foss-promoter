@@ -65,7 +65,7 @@ public class CassandraClient implements AutoCloseable {
     }
 
 
-    public ContributionsDao newExampleDao() {
+    public ContributionsDao newContributionDao() {
         return new ContributionsDao(this.session);
     }
 

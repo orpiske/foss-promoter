@@ -17,16 +17,25 @@
 
 package org.foss.promoter.commit.service.common;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
+import org.foss.promoter.common.data.CommitInfo;
+import org.foss.promoter.common.data.Contribution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,5 +130,45 @@ public class ContributionsDao {
 
 
         return statement.getQuery();
+    }
+
+    private Contribution toContribution(Row row) {
+        Contribution contribution = new Contribution();
+
+        final LocalDate id = row.getLocalDate("insertion_date");
+        contribution.setId(id.toString());
+
+        CommitInfo commitInfo = new CommitInfo();
+        commitInfo.setProjectName(row.getString("project"));
+        commitInfo.setAuthorName(row.getString("author"));
+        commitInfo.setAuthorEmail(row.getString("email"));
+        commitInfo.setDate(row.getString("date"));
+        commitInfo.setMessage(row.getString("message"));
+        contribution.setCommitInfo(commitInfo);
+
+        final ByteBuffer byteBuffer = row.getByteBuffer("qr_code");
+        final byte[] encoded = Base64.getEncoder().encode(byteBuffer.array());
+        contribution.setEncodedQrCode(new String(encoded));
+
+        return contribution;
+    }
+
+    public List<Contribution> query(String email) {
+        SimpleStatement statement = QueryBuilder
+                .selectFrom(TABLE_NAME)
+                .toDate("id").as("insertion_date")
+                .column("project")
+                .column("author")
+                .column("email")
+                .column("date")
+                .column("message")
+                .column("qr_code")
+                .whereColumn("email").isEqualTo(QueryBuilder.bindMarker())
+                .allowFiltering()
+                .build();
+
+        final ResultSet resultSet = session.execute(statement.getQuery(), email);
+
+        return resultSet.all().stream().map(this::toContribution).collect(Collectors.toList());
     }
 }
