@@ -51,6 +51,14 @@ public class CommitRoute extends RouteBuilder {
 
         LOG.debug("Generating for: {}", message);
 
+        if (message == null || message.isBlank()) {
+            exchange.getMessage().setHeader("valid-message", false);
+
+            return;
+        }
+
+        exchange.getMessage().setHeader("valid-message", true);
+
         QRCodeWriter barcodeWriter = new QRCodeWriter();
         BitMatrix bitMatrix = null;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -81,8 +89,11 @@ public class CommitRoute extends RouteBuilder {
                 .threads(3)
                 .unmarshal().json(JsonLibrary.Jackson, CommitInfo.class)
                 .process(this::process)
-                .toF("cql://%s:%d/%s?cql=%s", cassandraServer, cassandraPort, ContributionsDao.KEY_SPACE,
-                        ContributionsDao.getInsertStatement());
+                .choice()
+                .when(header("valid-message").isEqualTo(true))
+                    .toF("cql://%s:%d/%s?cql=%s", cassandraServer, cassandraPort, ContributionsDao.KEY_SPACE,
+                        ContributionsDao.getInsertStatement())
+                .endChoice();
 
     }
 }
