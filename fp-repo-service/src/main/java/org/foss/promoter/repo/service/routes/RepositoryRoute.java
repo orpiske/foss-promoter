@@ -169,6 +169,7 @@ public class RepositoryRoute extends RouteBuilder {
                     .toD(String.format("git://%s/${header.name}?operation=clone&remotePath=${body.name}", dataDir));
 
         from("direct:cloning")
+                .routeId("repositories-cloning")
                 .process(this::processCloning)
                 .marshal().json(JsonLibrary.Jackson)
                 .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
@@ -182,6 +183,7 @@ public class RepositoryRoute extends RouteBuilder {
                     .toD(String.format("git://%s/${header.name}?operation=pull&remoteName=origin", dataDir));
 
         from("direct:pulling")
+                .routeId("repositories-pulling")
                 .process(this::processPulling)
                 .marshal().json(JsonLibrary.Jackson)
                 .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
@@ -199,11 +201,13 @@ public class RepositoryRoute extends RouteBuilder {
                 .to("direct:readLog");
 
         from("direct:readingLog")
+                .routeId("repositories-reading-log")
                 .process(this::processReadingLog)
                 .marshal().json(JsonLibrary.Jackson)
                 .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);
 
         from("direct:readLog")
+                .routeId("repositories-read-log")
                 .process(this::processReadLog)
                 .marshal().json(JsonLibrary.Jackson)
                 .toF("kafka:tracking?brokers=%s:%d", bootstrapHost, bootstrapPort);

@@ -185,6 +185,7 @@ public class RepositoryRoute extends RouteBuilder {
                 .endChoice();
 
         from("direct:queryAuthorEmail")
+                .routeId("query-author-email")
                 .removeHeaders("CamelHttp*")
                 .setHeader("Content-Type", constant("application/json"))
                 .setHeader("Accept", constant("application/json"))
