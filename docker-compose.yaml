@@ -108,3 +108,13 @@ services:
       - "8080:8080"
     environment:
       KAFKA_HOST: kafka
+  fp-website:
+    image: httpd:2.4
+    logging:
+      driver: "none"
+    depends_on:
+      - fp-web
+    ports:
+      - "8088:80"
+    volumes:
+      - "./fp-website/src/main/html:/usr/local/apache2/htdocs/"

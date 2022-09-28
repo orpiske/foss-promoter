@@ -39,16 +39,30 @@ docker-compose up -d
 
 ## Setup Prometheus and Grafana
 
+**Note**: this only needs to be done the first time you run the demo. The settings will be stored in a volume.
+
 1. Add new data source in the Grafana data source configuration: http://localhost:3000/datasources/new.
 2. In the URL field, enter the Prometheus URL: http://prometheus:9090
 
 
 ## Setup the Grafana Dashboard
 
+**Note**: this only needs to be done the first time you run the demo. The settings will be stored in a volume.
+
 1. Access the Dashboard import page at: http://localhost:3000/dashboard/import
 2. Upload the the System Overview [dashboard JSON file](./grafana/System%20Overview.json). Select the Prometheus data source created previously.
 
 # Run the demo
+
+## Via Web
+
+**Note**: this is the recommended way to run the demo.
+
+1. You can access the project [front-end website](http://localhost:8088).
+
+## Via CLI
+
+**Note**: this is useful for debugging and developing the demo.
 
 1. Send a Git repository for the system to generate the QR codes for each of the commits in the repository:
 
@@ -94,3 +108,6 @@ curl --verbose -X POST http://localhost:8080/api/repository/ -H 'Accept: applica
 
 - [JBCN 2022](https://github.com/orpiske/foss-promoter/tree/jbcn-2022)
 - [Live - Cloud Conference Days](https://github.com/orpiske/foss-promoter/tree/live-cloud-conference-days-2022)
+
+
+
