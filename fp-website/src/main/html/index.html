@@ -21,19 +21,25 @@
     </div>
 </header>
 
-<main>
+<nav class="uk-navbar-container" uk-navbar>
+    <div class="uk-navbar-center">
+        <ul class="uk-navbar-nav">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="http://camel.apache.org">Apache Camel</a></li>
+            <li><a href="https://github.com/orpiske/foss-promoter.git">Código Fonte</a></li>
+        </ul>
+    </div>
+</nav>
 
-    <p>Choose your language:</p>
-    <div>
-        <div class="language-column">
-            <a href="./lang/pt-br/index.html">
-                <img src="./common/assets/images/flags/brazil.svg.png" width="350" height="auto" alt="Português do Brasil">
-            </a>
-        </div>
-        <div class="language-column">
-            <a href="./lang/en-us/index.html">
-                <img src="./common/assets/images/flags/usa.svg.png" width="350" height="auto" alt="English">
-            </a>
+<main>
+    <div class="uk-container uk-container-large">
+        <div class="uk-position-large uk-position-center">
+
+            <p>Escolha seu idioma / Choose your language:</p>
+            <p uk-margin>
+                <a class="uk-button uk-button-default" href="./lang/pt-br/index.html">Português do Brasil</a>
+<!--                <a class="uk-button uk-button-default" href="#">Link</a>-->
+            </p>
         </div>
     </div>
 </main>
