@@ -121,7 +121,7 @@ function addRepository() {
                     updateStates(response.data.transactionId);
                     count++;
 
-                    if (completed == true || count > 60) {
+                    if (completed == true || count > 600) {
                         clearInterval(timeout)
                         $("#repo-form").hide();
 //                        $("#repo-form").show();
