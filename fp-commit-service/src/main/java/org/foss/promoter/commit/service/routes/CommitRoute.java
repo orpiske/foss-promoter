@@ -88,7 +88,7 @@ public class CommitRoute extends RouteBuilder {
                 .routeId("commit-qr")
                 .threads(3)
                 .unmarshal().json(JsonLibrary.Jackson, CommitInfo.class)
-                .process(this::process)
+                .process(this::process) // Create QR codes
                 .choice()
                 .when(header("valid-message").isEqualTo(true))
                     .toF("cql://%s:%d/%s?cql=%s", cassandraServer, cassandraPort, ContributionsDao.KEY_SPACE,
