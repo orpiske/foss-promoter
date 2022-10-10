@@ -123,6 +123,7 @@ public class RepositoryRoute extends RouteBuilder {
             // The request is OK, but there's no content yet. So we return 204 (NO CONTENT)
             exchange.getMessage().setHeader(Exchange.HTTP_RESPONSE_CODE, 204);
         }
+
     }
 
     @Override
@@ -190,7 +191,7 @@ public class RepositoryRoute extends RouteBuilder {
                 .setHeader("Content-Type", constant("application/json"))
                 .setHeader("Accept", constant("application/json"))
                 .setHeader(Exchange.HTTP_METHOD, constant("GET"))
-                .toD(String.format("http://%s:%d/api/query/email/${header.contributorEmail}", commitServiceHost, commitServicePort))
+                .toD(String.format("http://%s:%d/api/query/email/${header.contributorEmail}?throwExceptionOnFailure=false", commitServiceHost, commitServicePort))
                 .unmarshal().json(JsonLibrary.Jackson);
     }
 }
